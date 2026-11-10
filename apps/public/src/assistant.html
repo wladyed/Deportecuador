@@ -1,0 +1,33 @@
+<div class="assistant-launch">@if(whatsapp()){<a class="wa-launch" [href]="whatsapp()" target="_blank" rel="noopener noreferrer">WhatsApp ↗</a>}<button type="button" (click)="toggle()" [attr.aria-expanded]="open()" aria-controls="assistant-panel">{{open()?t(2):t(0)}} <span aria-hidden="true">↗</span></button></div>
+@if(open()){
+<section id="assistant-panel" class="assistant-panel" role="region" [attr.aria-label]="t(1)" (keydown.escape)="open.set(false)">
+ <header><div><small>DEPORTECUADOR</small><h2>{{t(1)}}</h2></div><button type="button" (click)="open.set(false)" [attr.aria-label]="t(2)">×</button></header>
+ <div class="assistant-body">
+ @if(whatsapp()){<a class="wa" [href]="whatsapp()" target="_blank" rel="noopener noreferrer">{{t(24)}} ↗</a>}
+ @if(error()){<p role="alert" class="error">{{error()}}</p>}
+ @if(receipt()){<p role="status" class="receipt">{{receipt()}}</p>}
+ @if(!booking()){
+  <p>{{t(3)}}</p><div class="topics">@for(topic of topics;track topic.id){<button type="button" (click)="ask(topic.name)" [disabled]="busy()">{{topic.name}}</button>}</div>
+  <div role="log" aria-live="polite" class="messages">@for(message of messages();track $index){<p [class.visitor]="message.who==='you'">{{message.text}}</p>}</div>
+  <form (ngSubmit)="ask()"><label>{{t(4)}}<input name="question" [(ngModel)]="question" maxlength="500" required [disabled]="busy()"></label><button type="submit" [disabled]="busy()||!question.trim()">{{t(5)}}</button></form>
+  <button class="primary" type="button" (click)="agenda()" [disabled]="busy()">{{t(6)}}</button>
+ }@else{
+  <button type="button" (click)="booking.set(false)" [disabled]="busy()">← {{t(22)}}</button><h3>{{t(7)}}</h3><p>{{t(23)}}</p>
+  <button type="button" (click)="agenda()" [disabled]="busy()">↻ {{t(7)}}</button>
+  @if(!slots().length&&!busy()){<p>{{calendarReady()?t(8):pendingCalendar()}}</p>}
+  @if(slots().length&&!receipt()){
+  <form (ngSubmit)="reserve()">
+   <fieldset [disabled]="busy()"><label>{{t(7)}}<select name="slot" [(ngModel)]="slotId" (ngModelChange)="key=''" required><option value="">{{t(9)}}</option>@for(slot of slots();track slot.id){<option [value]="slot.id">{{when(slot)}}</option>}</select></label>
+   <label>{{t(10)}}<select name="interest" [(ngModel)]="interest" required><option value="">{{t(9)}}</option>@for(topic of topics;track topic.id){<option [value]="topic.id">{{topic.name}}</option>}</select></label>
+   <label>{{t(11)}}<input name="organization" [(ngModel)]="contact.organization" required maxlength="180" autocomplete="organization"></label>
+   <label>{{t(12)}}<input name="country" [(ngModel)]="contact.country" required maxlength="100" autocomplete="country-name"></label>
+   <label>{{t(13)}}<input name="name" [(ngModel)]="contact.name" required maxlength="180" autocomplete="name"></label>
+   <label>{{t(14)}}<input type="email" name="email" [(ngModel)]="contact.email" required maxlength="254" autocomplete="email"></label>
+   <label>{{t(15)}}<input type="tel" name="phone" [(ngModel)]="contact.phone" maxlength="40" autocomplete="tel"></label>
+   <label class="consent"><input type="checkbox" name="consent" [(ngModel)]="contact.consent" required>{{t(16)}}</label><a [href]="'/'+locale+'/privacy'" target="_blank" rel="noopener">{{t(17)}} ↗</a>
+   <button type="submit" class="primary" [disabled]="busy()">{{t(18)}}</button></fieldset>
+  </form>}
+ }
+ @if(busy()){<p role="status">{{t(25)}}</p>}
+ </div>
+</section>}

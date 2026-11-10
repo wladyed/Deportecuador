@@ -1,0 +1,21 @@
+ALTER TABLE admin_user ADD COLUMN auth_version BIGINT NOT NULL DEFAULT 0;
+CREATE TABLE admin_password_reset (
+ token_hash VARCHAR(64) PRIMARY KEY, user_id UUID NOT NULL REFERENCES admin_user(id),
+ expires_at TIMESTAMP WITH TIME ZONE NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ used_at TIMESTAMP WITH TIME ZONE
+);
+CREATE TABLE admin_recovery_code (
+ code_hash VARCHAR(64) PRIMARY KEY,user_id UUID NOT NULL REFERENCES admin_user(id),
+ used_at TIMESTAMP WITH TIME ZONE
+);
+CREATE TABLE admin_oidc_identity (
+ user_id UUID PRIMARY KEY REFERENCES admin_user(id), issuer VARCHAR(180) NOT NULL,
+ subject VARCHAR(255) NOT NULL, linked_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ UNIQUE(issuer,subject)
+);
+CREATE TABLE admin_auth_mail (
+ id UUID PRIMARY KEY, token_hash VARCHAR(64) NOT NULL REFERENCES admin_password_reset(token_hash),
+ payload TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
+ next_attempt_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ sent_at TIMESTAMP WITH TIME ZONE
+);

@@ -1,0 +1,93 @@
+<header class="topbar"><a class="brand" href="/es/">DEPORTE<span>CUADOR</span></a><span class="workspace-label">Administración</span><a class="public-link" href="/es/">Ver sitio público ↗</a></header>
+@if(loading()) {<main class="loading" role="status">Conectando con tu espacio de trabajo…</main>}
+@else if(!user()) {
+<main class="auth-layout">
+  <section class="intro"><p class="eyebrow">ESPACIO DE TRABAJO</p><h1>Un equipo.<br>Una gestión conectada.</h1><p>Accede a las herramientas de DeportEcuador con tu cuenta autorizada.</p><div class="security-note"><span>01 / Acceso personal</span><span>02 / Verificación en dos pasos</span><span>03 / Permisos según tu rol</span></div></section>
+  <section class="auth-card">
+    @if(error()){<p class="error" role="alert">{{error()}}</p>}
+    @if(notice()){<p class="notice" role="status">{{notice()}}</p>}
+    @if(screen()==='forgot'){<h2>Recuperar contraseña</h2><p>Recibirás un enlace si tu cuenta está habilitada. Se mantiene el segundo factor.</p><form (ngSubmit)="forgot()"><label>Correo<input type="email" name="recoveryEmail" [(ngModel)]="email" required maxlength="254"></label><button class="primary" [disabled]="busy()">Solicitar enlace</button></form><button class="text-button" (click)="backToLogin()">Volver</button>}
+    @else if(screen()==='reset'){<h2>Nueva contraseña</h2><form (ngSubmit)="resetPassword()"><label>Contraseña<input type="password" name="newPassword" [(ngModel)]="password" autocomplete="new-password" minlength="12" maxlength="72" required></label><label>Repite la contraseña<input type="password" name="confirmPassword" [(ngModel)]="confirmPassword" autocomplete="new-password" minlength="12" maxlength="72" required></label><button class="primary" [disabled]="busy()">Guardar y cerrar sesiones anteriores</button></form>}
+    @else if(screen()==='login') {
+      <p class="eyebrow">BIENVENIDO</p><h2>Iniciar sesión</h2><p class="muted">Usa tu correo y contraseña. Después te pediremos el código de tu aplicación autenticadora.</p>
+      <form (ngSubmit)="login()"><label>Correo electrónico<input type="email" name="email" [(ngModel)]="email" autocomplete="username" required maxlength="254"></label><label>Contraseña<input type="password" name="password" [(ngModel)]="password" autocomplete="current-password" required maxlength="72"></label><button class="primary" [disabled]="busy()">{{busy()?'Verificando…':'Continuar →'}}</button></form>
+      <button class="text-button" (click)="screen.set('forgot');notice.set('')">Olvidé mi contraseña</button>
+      @if(googleEnabled()){<p><a class="secondary" href="/oauth2/authorization/google">Continuar con Google Workspace</a></p>}
+      <div class="auth-footer"><p>{{setupRequired()?'La plataforma aún necesita su primer administrador.':'¿Recibiste una invitación de tu administrador?'}}</p><button class="text-button" (click)="screen.set('enroll');error.set('')" [disabled]="busy()">{{setupRequired()?'Activar primer administrador':'Activar mi cuenta'}}</button></div>
+    } @else if(screen()==='enroll') {
+      <p class="eyebrow">ACCESO CONTROLADO</p><h2>{{setupRequired()?'Primer administrador':'Activar cuenta'}}</h2>
+      <p class="muted">{{setupRequired()?'Necesitas el código privado de activación del servidor. No hay una cuenta ni contraseña predeterminada.':'Introduce el código de invitación que te entregó el administrador. Vence en 24 horas.'}}</p>
+      <form (ngSubmit)="enroll()"><label>Código de activación<input type="password" name="token" [(ngModel)]="activationToken" autocomplete="off" required maxlength="128"></label><label>Nombre<input name="name" [(ngModel)]="name" autocomplete="name" required maxlength="180"></label><label>Correo electrónico<input type="email" name="email" [(ngModel)]="email" autocomplete="username" required maxlength="254"></label><label>Elige tu contraseña<input type="password" name="password" [(ngModel)]="password" autocomplete="new-password" minlength="12" maxlength="72" required><small>Al menos 12 caracteres; máximo 72 bytes.</small></label><button class="primary" [disabled]="busy()">{{busy()?'Preparando…':'Configurar segundo factor →'}}</button></form>
+      <button class="text-button" (click)="backToLogin()" [disabled]="busy()">← Volver</button>
+    } @else {
+      <p class="eyebrow">VERIFICACIÓN EN DOS PASOS</p><h2>Confirma tu identidad</h2>
+      @if(enrollmentSecret()) {<div class="enrollment"><p>En tu aplicación autenticadora, añade una cuenta con una <strong>clave de configuración</strong>:</p><dl><dt>Cuenta</dt><dd>{{email}}</dd><dt>Clave</dt><dd><code class="secret">{{enrollmentSecret()}}</code></dd><dt>Tipo</dt><dd>Basado en tiempo · 6 dígitos · 30 segundos</dd></dl><p>Guarda la cuenta en tu autenticador antes de continuar. Esta clave se muestra solo durante la activación.</p></div>}
+      <p class="muted">Escribe el código actual de seis dígitos o uno de tus códigos de recuperación. Este paso vence en cinco minutos.</p>
+      <form (ngSubmit)="verify()"><label>Código del autenticador o de recuperación<input class="otp" name="code" [(ngModel)]="code" autocomplete="one-time-code" pattern="[0-9]{6}|[a-fA-F0-9]{32}" minlength="6" maxlength="32" required></label><button class="primary" [disabled]="busy()">{{busy()?'Comprobando…':'Entrar al panel →'}}</button></form><button class="text-button" (click)="backToLogin()" [disabled]="busy()">← Volver a iniciar sesión</button>
+    }
+  </section>
+</main>
+} @else {
+<div class="shell">
+  <aside class="sidebar"><p class="eyebrow">TU ESPACIO</p><div class="profile"><strong>{{user()!.name}}</strong><span>{{roleNames[user()!.role]}}</span></div><nav aria-label="Administración">
+    @if(user()!.role==='ADMIN'||user()!.role==='COMMERCIAL'){<button [class.active]="pane()==='requests'" (click)="navigate('requests')" [disabled]="busy()">Solicitudes <span>↗</span></button>}
+    @if(user()!.role==='ADMIN'){<button [class.active]="pane()==='users'" (click)="navigate('users')" [disabled]="busy()">Equipo y accesos <span>↗</span></button>}
+    @if(user()!.role==='ADMIN'||user()!.role==='VIEWER'){<button [class.active]="pane()==='reports'" (click)="navigate('reports')" [disabled]="busy()">Reportes <span>↗</span></button>}
+    @if(user()!.role==='ADMIN'){<button [class.active]="pane()==='audit'" (click)="navigate('audit')" [disabled]="busy()">Auditoría <span>↗</span></button>}
+    @if(user()!.role==='EDITOR'||user()!.role==='ADMIN'){<button [class.active]="pane()==='editor'" (click)="navigate('editor')" [disabled]="busy()">Contenido editorial</button>}
+  @if(user()!.role==='ADMIN'){<button (click)="navigate('appointments')" [class.active]="pane()==='appointments'" [disabled]="busy()">Agenda de citas</button>}
+  @if(user()!.role==='ADMIN'){<button (click)="navigate('assistantSettings')" [class.active]="pane()==='assistantSettings'" [disabled]="busy()">WhatsApp y reservas</button>}
+  @if(user()!.role==='ADMIN'||user()!.role==='EDITOR'){<button (click)="navigate('media')" [class.active]="pane()==='media'" [disabled]="busy()">Biblioteca multimedia</button>}
+  <button (click)="navigate('security')" [class.active]="pane()==='security'" [disabled]="busy()">Seguridad de mi cuenta</button>
+  </nav><button class="logout" (click)="logout()" [disabled]="busy()">Cerrar sesión</button></aside>
+  <main class="workspace" [attr.aria-busy]="busy()">
+    @if(error()){<p class="error" role="alert">{{error()}}</p>}
+    @if(notice()){<p class="notice" role="status">{{notice()}}</p>}
+    @if(busy()){<p class="progress" role="status">Actualizando…</p>}
+    @if(pane()==='assistantSettings'){<assistant-settings />}
+    @if(pane()==='security'){<account-security />}
+    @if(pane()==='media'){<media-library />}
+    @if(pane()==='appointments'){<appointment-workspace />}
+    @if(pane()==='requests') {
+      <div class="heading"><div><p class="eyebrow">RELACIONES COMERCIALES</p><h1>{{user()!.role==='COMMERCIAL'?'Mis solicitudes':'Bandeja de solicitudes'}}</h1><p class="muted">{{user()!.role==='COMMERCIAL'?'Aquí aparecen únicamente las solicitudes que te han asignado.':'Consulta las solicitudes recibidas y organiza a sus responsables.'}}</p></div><span class="count">{{rows().total}} registros</span></div>
+      <div class="toolbar"><label>Tipo de solicitud<select name="type" [(ngModel)]="type" (ngModelChange)="reload()" [disabled]="busy()"><option value="">Todas</option><option value="DEMO">Demostración</option><option value="ADVICE">Asesoría</option></select></label><label>Estado<select name="statusFilter" [(ngModel)]="statusFilter" (ngModelChange)="reload()" [disabled]="busy()"><option value="">Todos</option>@for(state of states;track state){<option [value]="state">{{statusNames[state]}}</option>}</select></label><label class="check"><input type="checkbox" [(ngModel)]="dueOnly" (ngModelChange)="reload()" [disabled]="busy()">Seguimientos vencidos</label><button class="secondary" (click)="reload(rows().page)" [disabled]="busy()">Actualizar</button></div>
+      <details class="panel crm-notices"><summary>Notificaciones comerciales ({{notifications().length}})</summary><p class="muted">Se actualizan al consultar la bandeja. Las alertas vencidas se revisan cada minuto.</p>@for(item of notifications();track item.id){<div class="crm-notice"><span>{{item.kind==='ASSIGNMENT'?'Solicitud asignada':'Seguimiento pendiente'}} · {{item.createdAt|date:'dd/MM/yyyy HH:mm'}}<small class="reference">{{item.requestId}}</small></span>@if(!item.readAt){<button class="secondary" (click)="markRead(item)" [disabled]="busy()">Marcar leída</button>}@else{<small>Leída</small>}</div>}@empty{<p>Sin notificaciones.</p>}</details>
+      <div class="request-layout" [class.with-detail]="selected()">
+        <section class="panel"><div class="table-scroll"><table><thead><tr><th>Organización / contacto</th><th>Solicitud</th><th>Responsable</th><th></th></tr></thead><tbody>
+          @for(row of rows().items;track row.id){<tr [class.selected]="selected()?.id===row.id"><td><strong>{{row.organization}}</strong><small>{{row.name}} · {{row.country}}</small></td><td><span class="badge">{{row.type==='DEMO'?'Demostración':'Asesoría'}}</span><small>{{row.createdAt|date:'dd/MM/yyyy HH:mm'}}</small><small>{{statusNames[row.status]||row.status}}</small></td><td>{{row.assignedName||'Sin asignar'}}</td><td><button class="text-button" (click)="select(row)">Ver detalle</button></td></tr>}
+          @empty{<tr><td colspan="4" class="empty">No hay solicitudes para esta selección.</td></tr>}
+        </tbody></table></div><div class="pagination"><button class="secondary" (click)="reload(rows().page-1)" [disabled]="busy()||rows().page===0">← Anterior</button><span>Página {{rows().page+1}}</span><button class="secondary" (click)="reload(rows().page+1)" [disabled]="busy()||(rows().page+1)*rows().size>=rows().total">Siguiente →</button></div></section>
+        @if(selected();as detail){<aside class="detail panel"><div class="detail-heading"><h2>Detalle</h2><button class="text-button" (click)="selected.set(null)" aria-label="Cerrar detalle">Cerrar ×</button></div><p class="reference">{{detail.id}}</p><dl><dt>Organización</dt><dd>{{detail.organization}}</dd><dt>Contacto</dt><dd>{{detail.name}}</dd><dt>Correo</dt><dd><a [href]="'mailto:'+detail.email">{{detail.email}}</a></dd><dt>Teléfono</dt><dd>{{detail.phone||'No indicado'}}</dd><dt>Intereses</dt><dd>{{detail.interests.join(', ')}}</dd><dt>Descripción</dt><dd class="description">{{detail.description||'Sin descripción'}}</dd><dt>Estado / idioma</dt><dd>{{statusNames[crm()?.workflow?.status||detail.status]}} / {{detail.locale}}</dd></dl>
+          @if(user()!.role==='ADMIN'){<form (ngSubmit)="assign()" class="assignment"><label>Responsable<select name="assignee" [(ngModel)]="assignedTo"><option value="">Sin asignar</option>@for(person of assignees();track person.id){<option [value]="person.id">{{person.name}}</option>}</select></label><button class="primary" [disabled]="busy()">Guardar responsable</button></form>}
+          @if(crm();as tracking){
+            <section class="crm-section"><h2>Seguimiento comercial</h2>
+              @if(tracking.workflow.closedAt){<p>Cerrada: {{tracking.workflow.closedAt|date:'dd/MM/yyyy HH:mm'}}</p><p class="description">{{tracking.workflow.closeReason}}</p>}
+              <form (ngSubmit)="saveWorkflow()" class="crm-form"><label>Estado<select name="workflowStatus" [(ngModel)]="workflowStatus">@for(state of workflowOptions();track state){<option [value]="state">{{statusNames[state]}}</option>}</select></label>
+                @if(workflowStatus==='WON'||workflowStatus==='LOST'){<label>Motivo de cierre<textarea name="closeReason" [(ngModel)]="closeReason" maxlength="1000" required rows="3"></textarea></label>}@else{<label>Próximo contacto<input type="datetime-local" name="nextContact" [(ngModel)]="nextContact"><small>Hora local de tu dispositivo. Deja vacío para quitar el recordatorio.</small></label>}
+                <button class="primary" [disabled]="busy()||(isClosed()&&workflowStatus!=='CONTACTED')">{{isClosed()?'Reabrir solicitud':'Guardar seguimiento'}}</button>
+              </form>
+            </section>
+            <section class="crm-section"><h2>Registrar actividad</h2><form (ngSubmit)="addActivity()" class="crm-form"><label>Tipo<select name="activityKind" [(ngModel)]="activityKind"><option value="NOTE">Nota</option><option value="CALL">Llamada</option><option value="MEETING">Reunión</option><option value="EMAIL">Correo</option></select></label><label>Descripción<textarea name="activityBody" [(ngModel)]="activityBody" maxlength="4000" required rows="4"></textarea></label><small>Registrar un correo documenta la actividad; no envía un mensaje.</small><button class="primary" [disabled]="busy()||!activityBody.trim()">Registrar actividad</button></form></section>
+            <section class="crm-section"><h2>Historial</h2>@for(activity of tracking.activities;track activity.id){<article class="crm-event"><strong>{{activityNames[activity.kind]||activity.kind}}</strong><small>{{activity.actor}} · {{activity.createdAt|date:'dd/MM/yyyy HH:mm'}}</small><p class="description">{{activity.body}}</p></article>}@empty{<p>Sin actividades en esta página.</p>}<div class="pagination"><button class="secondary" (click)="historyPage(activityPage-1)" [disabled]="busy()||activityPage===0">← Anterior</button><span>{{activityPage+1}}</span><button class="secondary" (click)="historyPage(activityPage+1)" [disabled]="busy()||tracking.activities.length<50">Siguiente →</button></div></section>
+          }
+        </aside>}
+      </div>
+    }
+    @if(pane()==='users') {
+      <div class="heading"><div><p class="eyebrow">PERMISOS Y SEGURIDAD</p><h1>Equipo y accesos</h1><p class="muted">Cuentas por invitación, con segundo factor obligatorio.</p></div></div>
+      <section class="panel invitation-form"><h2>Invitar a una persona</h2><form (ngSubmit)="invite()" class="invite-grid"><label>Nombre<input name="newName" [(ngModel)]="newUser.name" maxlength="180" required></label><label>Correo<input type="email" name="newEmail" [(ngModel)]="newUser.email" maxlength="254" required></label><label>Rol<select name="newRole" [(ngModel)]="newUser.role">@for(role of roles;track role){<option [value]="role">{{roleNames[role]}}</option>}</select></label><button class="primary" [disabled]="busy()">Crear invitación</button></form>
+        @if(invitation()){<div class="enrollment"><p>Entrega este código junto con la dirección <strong>/admin/</strong>. El destinatario debe elegir «Activar mi cuenta».</p><code class="secret">{{invitation()}}</code><small>Vence: {{invitationExpiry()|date:'dd/MM/yyyy HH:mm'}}. No se envía correo automáticamente.</small></div>}
+      </section>
+      <section class="panel table-scroll"><table><thead><tr><th>Persona</th><th>Rol</th><th>Acceso</th><th>Activación</th><th></th></tr></thead><tbody>@for(person of users();track person.id){<tr><td><strong>{{person.name}}</strong><small>{{person.email}}</small></td><td><select [attr.aria-label]="'Rol de '+person.name" [(ngModel)]="person.role">@for(role of roles;track role){<option [value]="role">{{roleNames[role]}}</option>}</select></td><td><label class="check"><input type="checkbox" [(ngModel)]="person.enabled">Activo</label></td><td><span class="badge">{{person.enrolled?'MFA configurado':'Pendiente'}}</span>@if(!person.enrolled && person.enabled){<button class="text-button" (click)="renewInvitation(person)" [disabled]="busy()">Renovar invitación</button>}</td><td><button class="secondary" (click)="saveUser(person)" [disabled]="busy()">Guardar</button></td></tr>}</tbody></table></section>
+      <p class="muted">Administrador gestiona accesos y asignaciones. Comercial consulta sus solicitudes. Editor no ve contactos. Consulta solo accede a reportes agregados.</p>
+    }
+    @if(pane()==='reports') {
+      <p class="eyebrow">VISTA AGREGADA</p><h1>Reportes</h1><p class="muted">Resumen sin nombres, correos ni datos de contacto.</p><section class="metric panel"><span>Solicitudes recibidas</span><strong>{{total()}}</strong></section><section class="panel table-scroll"><table><thead><tr><th>Tipo</th><th>Estado</th><th>Cantidad</th></tr></thead><tbody>@for(item of reports();track item.type+item.status){<tr><td>{{item.type==='DEMO'?'Demostración':'Asesoría'}}</td><td>{{statusNames[item.status]||item.status}}</td><td>{{item.count}}</td></tr>}@empty{<tr><td colspan="3" class="empty">Todavía no hay solicitudes.</td></tr>}</tbody></table></section>
+    }
+    @if(pane()==='audit') {
+      <p class="eyebrow">TRAZABILIDAD</p><h1>Auditoría</h1><p class="muted">Últimos 100 eventos de acceso, cuentas y asignación. Los identificadores permiten relacionar cada operación sin incluir contraseñas o códigos MFA.</p><section class="panel table-scroll"><table><thead><tr><th>Fecha</th><th>Acción</th><th>Actor</th><th>Registro</th></tr></thead><tbody>@for(event of audit();track event.id){<tr><td>{{event.createdAt|date:'dd/MM/yyyy HH:mm'}}</td><td>{{event.action}}</td><td class="reference">{{event.actorId||'Sistema'}}</td><td class="reference">{{event.targetId||'—'}}</td></tr>}@empty{<tr><td colspan="4" class="empty">Sin eventos registrados.</td></tr>}</tbody></table></section>
+    }
+    @if(pane()==='editor') {<editorial-workspace />}
+  </main>
+</div>
+}
